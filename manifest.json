@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "QA DashCam",
+  "version": "1.0",
+  "description": "Records user interactions for QA and debugging purposes.",
+  "permissions": [
+    "storage",      // Needed to save the event logs
+    "activeTab",    // A good practice permission, less intrusive than all_urls
+    "scripting"     // Needed to inject content scripts
+  ],
+  "host_permissions": [
+    "<all_urls>"    // Allows the extension to run on any website
+  ],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "action": {
+    "default_popup": "popup.html" // The UI file for the popup
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle" // Run script after the page is mostly loaded
+    }
+  ]
+}

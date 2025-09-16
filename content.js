@@ -250,3 +250,54 @@ document.addEventListener('scroll', () => {
     chrome.runtime.sendMessage(logEntry);
   }, 500); // Only log scroll events every 500ms
 }, true);
+
+// Track URL changes (including SPA navigation)
+let currentUrl = window.location.href;
+const checkUrlChange = () => {
+  if (window.location.href !== currentUrl) {
+    const context = getEventContext();
+    
+    const logEntry = {
+      type: 'navigation',
+      from: currentUrl,
+      to: window.location.href,
+      context: context,
+      timestamp: new Date().toISOString()
+    };
+    
+    chrome.runtime.sendMessage(logEntry);
+    currentUrl = window.location.href;
+  }
+};
+
+// Check for URL changes every 500ms (covers SPAs)
+setInterval(checkUrlChange, 500);
+
+// Also listen for popstate events (back/forward)
+window.addEventListener('popstate', checkUrlChange);
+
+// Track page load completion
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    const context = getEventContext();
+    
+    const logEntry = {
+      type: 'page_load',
+      context: context,
+      timestamp: new Date().toISOString()
+    };
+    
+    chrome.runtime.sendMessage(logEntry);
+  });
+} else {
+  // Page already loaded when script runs
+  const context = getEventContext();
+  
+  const logEntry = {
+    type: 'page_load',
+    context: context,
+    timestamp: new Date().toISOString()
+  };
+  
+  chrome.runtime.sendMessage(logEntry);
+}

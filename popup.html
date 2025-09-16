@@ -3,16 +3,256 @@
 <head>
   <title>QA DashCam Log</title>
   <style>
-    body { width: 400px; font-family: sans-serif; }
-    ul { list-style: none; padding: 0; }
-    li { padding: 5px; border-bottom: 1px solid #ccc; }
-    .type { font-weight: bold; }
-    .selector { color: #0056b3; }
+    body { 
+      width: 500px; 
+      max-height: 700px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      margin: 0;
+      padding: 15px;
+      background: #fafafa;
+    }
+    
+    h1 {
+      margin: 0 0 15px 0;
+      font-size: 18px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .btn {
+      background: #1976d2;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    
+    .btn:hover {
+      background: #1565c0;
+      transform: translateY(-1px);
+    }
+    
+    .btn.danger {
+      background: #d32f2f;
+    }
+    
+    .btn.danger:hover {
+      background: #c62828;
+    }
+    
+    .btn.secondary {
+      background: #666;
+    }
+    
+    .btn.secondary:hover {
+      background: #555;
+    }
+    
+    .session-info {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 12px;
+    }
+    
+    .session-stats {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      font-size: 11px;
+      opacity: 0.9;
+    }
+    
+    .export-section {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .export-section h3 {
+      margin: 0 0 10px 0;
+      font-size: 13px;
+      color: #333;
+    }
+    
+    .export-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    ul { 
+      list-style: none; 
+      padding: 0; 
+      margin: 0;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    li { 
+      padding: 10px; 
+      margin-bottom: 8px;
+      background: white;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    
+    .event-header {
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: block;
+    }
+    
+    .type { 
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+    
+    .selector-line {
+      margin: 4px 0;
+    }
+    
+    .selector { 
+      color: #1976d2;
+      font-family: 'Courier New', monospace;
+      background: #f8f9fa;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-size: 11px;
+      word-break: break-all;
+    }
+    
+    .details {
+      color: #666;
+      font-size: 11px;
+      margin-top: 4px;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .page-context {
+      color: #888;
+      font-size: 10px;
+      margin-top: 4px;
+      font-style: italic;
+    }
+    
+    .timestamp {
+      color: #999;
+      font-size: 10px;
+      font-family: 'Courier New', monospace;
+      white-space: nowrap;
+      margin-left: 10px;
+    }
+    
+    #summary {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    /* Custom scrollbar */
+    ul::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    ul::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
+    }
+    
+    ul::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+    }
+    
+    ul::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+    
+    /* Hover effects */
+    li:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      transition: all 0.2s ease;
+    }
+    
+    /* Empty state styling */
+    .empty-state {
+      text-align: center;
+      color: #666;
+      padding: 40px 20px;
+      background: white;
+      border-radius: 6px;
+      border: 2px dashed #ddd;
+    }
+    
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #4caf50;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 4px;
+      font-size: 12px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+    
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
   </style>
 </head>
 <body>
-  <h1>Event Log</h1>
+  <h1>
+    <div>🎥 QA DashCam <span style="font-size: 12px; color: #666; font-weight: normal;">Keep it 100</span></div>
+    <div class="header-actions">
+      <button class="btn danger" id="clearBtn">🗑️ Clear</button>
+    </div>
+  </h1>
+  
+  <div id="sessionInfo" class="session-info" style="display: none;">
+    <div><strong>Current Session:</strong> <span id="sessionId"></span></div>
+    <div class="session-stats">
+      <span>Started: <span id="sessionStart"></span></span>
+      <span>Duration: <span id="sessionDuration"></span></span>
+    </div>
+  </div>
+  
+  <div class="export-section">
+    <h3>📤 Export Options</h3>
+    <div class="export-buttons">
+      <button class="btn" id="exportJsonBtn">📄 Export JSON</button>
+      <button class="btn" id="exportCsvBtn">📊 Export CSV</button>
+      <button class="btn secondary" id="generateTestBtn">🧪 Generate Test</button>
+    </div>
+  </div>
+  
   <ul id="log-container"></ul>
+  
   <script src="popup.js"></script>
 </body>
 </html>

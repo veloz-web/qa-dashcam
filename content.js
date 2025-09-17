@@ -229,26 +229,118 @@ document.addEventListener('focusin', (event) => {
   }
 }, true);
 
-// Track significant scroll events (throttled)
-let scrollTimeout = null;
+// Enhanced scroll tracking with direction, distance, and velocity
+let scrollData = {
+  lastX: window.scrollX,
+  lastY: window.scrollY,
+  lastTimestamp: Date.now(),
+  isScrolling: false,
+  timeout: null
+};
+
 document.addEventListener('scroll', () => {
-  if (scrollTimeout) {
-    clearTimeout(scrollTimeout);
+  const currentX = window.scrollX;
+  const currentY = window.scrollY;
+  const currentTime = Date.now();
+  
+  // Calculate scroll metrics
+  const deltaX = currentX - scrollData.lastX;
+  const deltaY = currentY - scrollData.lastY;
+  const deltaTime = currentTime - scrollData.lastTimestamp;
+  const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+  
+  // Determine scroll direction
+  let direction = 'none';
+  if (Math.abs(deltaY) > Math.abs(deltaX)) {
+    direction = deltaY > 0 ? 'down' : 'up';
+  } else if (Math.abs(deltaX) > 0) {
+    direction = deltaX > 0 ? 'right' : 'left';
   }
   
-  scrollTimeout = setTimeout(() => {
+  // Calculate velocity (pixels per second)
+  const velocity = deltaTime > 0 ? Math.round((distance / deltaTime) * 1000) : 0;
+  
+  // Clear existing timeout
+  if (scrollData.timeout) {
+    clearTimeout(scrollData.timeout);
+  }
+  
+  // Mark as scrolling if not already
+  if (!scrollData.isScrolling) {
+    scrollData.isScrolling = true;
+    
+    // Log scroll start
     const context = getEventContext();
+    const startLogEntry = {
+      type: 'scroll_start',
+      scroll: {
+        x: currentX,
+        y: currentY,
+        startX: scrollData.lastX,
+        startY: scrollData.lastY
+      },
+      context: context,
+      timestamp: new Date().toISOString()
+    };
+    chrome.runtime.sendMessage(startLogEntry);
+  }
+  
+  // Update tracking data
+  scrollData.lastX = currentX;
+  scrollData.lastY = currentY;
+  scrollData.lastTimestamp = currentTime;
+  
+  // Set timeout to detect scroll end
+  scrollData.timeout = setTimeout(() => {
+    const context = getEventContext();
+    
+    // Calculate total scroll distance from start
+    const totalDeltaX = currentX - scrollData.startX || 0;
+    const totalDeltaY = currentY - scrollData.startY || 0;
+    const totalDistance = Math.sqrt(totalDeltaX * totalDeltaX + totalDeltaY * totalDeltaY);
+    
+    // Determine primary direction for the entire scroll session
+    let primaryDirection = 'none';
+    if (Math.abs(totalDeltaY) > Math.abs(totalDeltaX)) {
+      primaryDirection = totalDeltaY > 0 ? 'down' : 'up';
+    } else if (Math.abs(totalDeltaX) > 0) {
+      primaryDirection = totalDeltaX > 0 ? 'right' : 'left';
+    }
     
     const logEntry = {
       type: 'scroll',
-      scroll: context.scroll,
+      scroll: {
+        x: currentX,
+        y: currentY,
+        startX: scrollData.startX || scrollData.lastX,
+        startY: scrollData.startY || scrollData.lastY,
+        deltaX: totalDeltaX,
+        deltaY: totalDeltaY,
+        distance: Math.round(totalDistance),
+        direction: primaryDirection,
+        velocity: velocity,
+        duration: currentTime - (scrollData.startTime || scrollData.lastTimestamp)
+      },
       viewport: context.viewport,
       context: context,
       timestamp: new Date().toISOString()
     };
     
     chrome.runtime.sendMessage(logEntry);
-  }, 500); // Only log scroll events every 500ms
+    
+    // Reset scroll tracking
+    scrollData.isScrolling = false;
+    scrollData.startX = undefined;
+    scrollData.startY = undefined;
+    scrollData.startTime = undefined;
+  }, 150); // Log after 150ms of no scrolling
+  
+  // Store start position if not already set
+  if (scrollData.startX === undefined) {
+    scrollData.startX = scrollData.lastX;
+    scrollData.startY = scrollData.lastY;
+    scrollData.startTime = scrollData.lastTimestamp;
+  }
 }, true);
 
 // Track URL changes (including SPA navigation)

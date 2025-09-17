@@ -105,6 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'form_submit': '📝',
       'focus': '🎯',
       'scroll': '📜',
+      'scroll_start': '📜',
       'navigation': '🛣️',
       'page_load': '📄'
     };
@@ -117,8 +118,9 @@ document.addEventListener('DOMContentLoaded', () => {
       'click': '#4CAF50',
       'keypress': '#2196F3',
       'form_submit': '#FF9800',
-      'focus': '#9C27B0',
+      'focus': '9C27B0',
       'scroll': '#607D8B',
+      'scroll_start': '#90A4AE',
       'navigation': '#F44336',
       'page_load': '#795548'
     };
@@ -154,6 +156,10 @@ document.addEventListener('DOMContentLoaded', () => {
       'Mouse X',
       'Mouse Y',
       'Key',
+      'Scroll Direction',
+      'Scroll Distance',
+      'Scroll Velocity',
+      'Scroll Duration',
       'Session ID'
     ];
     
@@ -167,6 +173,10 @@ document.addEventListener('DOMContentLoaded', () => {
       event.mouse?.x || '',
       event.mouse?.y || '',
       event.key || '',
+      event.scroll?.direction || '',
+      event.scroll?.distance || '',
+      event.scroll?.velocity || '',
+      event.scroll?.duration || '',
       event.sessionId || ''
     ]);
     
@@ -289,7 +299,24 @@ describe('User Journey Test', () => {
     }
     
     if (entry.type === 'scroll' && entry.scroll) {
-      content += `<div class="details">Scroll: (${entry.scroll.x}, ${entry.scroll.y})</div>`;
+      const direction = entry.scroll.direction || 'none';
+      const distance = entry.scroll.distance || 0;
+      const velocity = entry.scroll.velocity || 0;
+      const duration = entry.scroll.duration || 0;
+      
+      let scrollDetails = `${direction.toUpperCase()}`;
+      if (distance > 0) scrollDetails += ` ${distance}px`;
+      if (velocity > 0) scrollDetails += ` @${velocity}px/s`;
+      if (duration > 0) scrollDetails += ` (${Math.round(duration)}ms)`;
+      
+      content += `<div class="details">Scroll: ${scrollDetails}</div>`;
+      if (entry.scroll.deltaX !== 0 || entry.scroll.deltaY !== 0) {
+        content += `<div class="details">Delta: (${entry.scroll.deltaX}, ${entry.scroll.deltaY})</div>`;
+      }
+    }
+
+    if (entry.type === 'scroll_start') {
+      content += `<div class="details">Scroll started at (${entry.scroll.x}, ${entry.scroll.y})</div>`;
     }
 
     if (entry.type === 'navigation') {
@@ -446,17 +473,19 @@ describe('User Journey Test', () => {
   }
 
   // Helper function to get event icon
-  function getEventIcon(type) {
-    const icons = {
-      'click': '🖱️',
-      'keypress': '⌨️',
-      'form_submit': '📝',
-      'focus': '🎯',
-      'scroll': '📜',
-      'navigation': '🛣️'
-    };
-    return icons[type] || '📋';
-  }
+function getEventIconUnicode(type) {
+  const icons = {
+    'click': '\u{1F5B1}\u{FE0F}',      // 🖱️ mouse
+    'keypress': '\u{2328}\u{FE0F}',     // ⌨️ keyboard  
+    'form_submit': '\u{1F4DD}',         // 📝 memo
+    'focus': '\u{1F3AF}',               // 🎯 target
+    'scroll': '\u{1F4DC}',              // 📜 scroll
+    'scroll_start': '\u{1F4DC}',        // 📜 scroll
+    'navigation': '\u{1F6E3}\u{FE0F}',  // 🛣️ road
+    'page_load': '\u{1F4C4}'            // 📄 page
+  };
+  return icons[type] || '\u{1F4CB}';    // 📋 clipboard as default
+}
 
   // Helper function to get event color
   function getEventColor(type) {
